@@ -510,7 +510,16 @@ with st.sidebar:
     st.markdown("### 🌍 EVS/WVS Explorer")
     st.markdown("<div style='font-size:0.75rem;color:#AAB4C8;margin-bottom:1.5rem'>European & World Values Survey<br>2017–2022 · 157 000 répondants</div>", unsafe_allow_html=True)
 
-    data_path = st.text_input("📂 Fichier CSV", value="data_evs_mapped.csv", label_visibility="visible")
+    # Upload du fichier CSV
+    uploaded_file = st.file_uploader(
+        "📂 Uploadez data_evs_mapped.csv",
+        type=['csv'],
+        help="Le fichier CSV des données EVS/WVS"
+    )
+
+    if uploaded_file is not None:
+        with st.spinner("Chargement…"):
+            df_full = load_data(uploaded_file)
 
     try:
         with st.spinner("Chargement…"):
