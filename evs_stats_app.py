@@ -12,22 +12,42 @@ from matplotlib.colors import LinearSegmentedColormap
 import warnings
 warnings.filterwarnings("ignore")
 
-import gzip
-import requests
-from io import BytesIO
+import zipfile
 
 @st.cache_data(show_spinner=False)
 def load_data_from_github():
-    """Télécharge et décompresse le CSV depuis GitHub Release"""
+    """Télécharge et décompresse le CSV depuis GitHub Release (fichier ZIP)"""
+    
     url = "https://github.com/felixat13/evs_stats/releases/download/v1.0/data_evs_mapped.csv.zip"
     
-    response = requests.get(url)
-    if response.status_code == 200:
-        # Décompresser
-        with gzip.open(BytesIO(response.content), 'rt', encoding='utf-8') as f:
-            return pd.read_csv(f)
-    else:
-        st.error("Erreur de téléchargement")
+    try:
+        st.info("📥 Téléchargement des données...")
+        response = requests.get(url, timeout=60)
+        
+        if response.status_code != 200:
+            st.error(f"Erreur HTTP {response.status_code}")
+            st.stop()
+        
+        st.info("📦 Décompression...")
+        
+        # Décompresser le ZIP
+        with zipfile.ZipFile(BytesIO(response.content)) as z:
+            # Trouver le fichier CSV dans le ZIP
+            csv_files = [f for f in z.namelist() if f.endswith('.csv') and not f.startswith('__MACOSX')]
+            
+            if not csv_files:
+                st.error("Aucun fichier CSV trouvé dans le ZIP")
+                st.stop()
+            
+            # Lire le premier CSV trouvé
+            with z.open(csv_files[0]) as csvfile:
+                df = pd.read_csv(csvfile)
+        
+        st.success(f"✅ {len(df):,} lignes chargées")
+        return df
+        
+    except Exception as e:
+        st.error(f"Erreur : {e}")
         st.stop()
 
 # ─── HELPER : tableau HTML sans pyarrow ─────────────────────────────────────
