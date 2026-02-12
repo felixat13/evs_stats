@@ -12,6 +12,24 @@ from matplotlib.colors import LinearSegmentedColormap
 import warnings
 warnings.filterwarnings("ignore")
 
+import gzip
+import requests
+from io import BytesIO
+
+@st.cache_data(show_spinner=False)
+def load_data_from_github():
+    """Télécharge et décompresse le CSV depuis GitHub Release"""
+    url = "https://github.com/felixat13/evs_stats/releases/download/v1.0/data_evs_mapped.csv.zip"
+    
+    response = requests.get(url)
+    if response.status_code == 200:
+        # Décompresser
+        with gzip.open(BytesIO(response.content), 'rt', encoding='utf-8') as f:
+            return pd.read_csv(f)
+    else:
+        st.error("Erreur de téléchargement")
+        st.stop()
+
 # ─── HELPER : tableau HTML sans pyarrow ─────────────────────────────────────
 def html_table(df, gradient_col=None, max_rows=200):
     """Affiche un DataFrame en HTML pur — zéro dépendance à pyarrow."""
@@ -510,20 +528,9 @@ with st.sidebar:
     st.markdown("### 🌍 EVS/WVS Explorer")
     st.markdown("<div style='font-size:0.75rem;color:#AAB4C8;margin-bottom:1.5rem'>European & World Values Survey<br>2017–2022 · 157 000 répondants</div>", unsafe_allow_html=True)
 
-    # Upload du fichier CSV
-    uploaded_file = st.file_uploader(
-        "📂 Uploadez data_evs_mapped.csv",
-        type=['csv'],
-        help="Le fichier CSV des données EVS/WVS"
-    )
-
-    if uploaded_file is not None:
-        with st.spinner("Chargement…"):
-            df_full = load_data(uploaded_file)
-
     try:
         with st.spinner("Chargement…"):
-            df_full = load_data(data_path)
+            df_full = load_data_from_github()
         all_countries_raw = sorted(df_full['Country (ISO 3166-1 Alpha-2 code)'].dropna().unique())
         all_countries = [f"{c} – {COUNTRY_NAMES.get(c, c)}" for c in all_countries_raw]
         code_map = {f"{c} – {COUNTRY_NAMES.get(c, c)}": c for c in all_countries_raw}
