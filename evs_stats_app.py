@@ -2,17 +2,17 @@
 EVS/WVS 2017-2022 — Comparateur de pays
 Application Streamlit pour statistiques comparatives agrégées
 """
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap
+import requests 
+from io import BytesIO 
+import zipfile     
 import warnings
 warnings.filterwarnings("ignore")
-
-import zipfile
 
 @st.cache_data(show_spinner=False)
 def load_data_from_github():
